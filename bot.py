@@ -17,8 +17,6 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
-ADMIN_IDS = [123456789]  # غيّرها لمعرفك
-
 URL_PATTERN = re.compile(
     r"(https?://\S+)|(www\.\S+)|(t\.me/\S+)|(\S+\.(com|net|org|io|me|co|xyz|info|biz)\b)",
     re.IGNORECASE,
@@ -50,8 +48,16 @@ async def delete_promo_messages(update: Update, context: ContextTypes.DEFAULT_TY
 
     text = message.text or message.caption or ""
 
-    if message.from_user and message.from_user.id in ADMIN_IDS:
-        return
+    if message.from_user:
+        try:
+            member = await context.bot.get_chat_member(
+                chat_id=message.chat_id,
+                user_id=message.from_user.id,
+            )
+            if member.status in ("administrator", "creator"):
+                return
+        except Exception as e:
+            logger.error(f"تعذر التحقق من صلاحية المستخدم: {e}")
 
     if contains_link(text) or contains_promo_keyword(text):
         try:
